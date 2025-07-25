@@ -1963,6 +1963,7 @@
 								"datasetParameters": {
 									"source1": {},
 									"source2": {},
+									"source3": {},
 									"sink1": {
 										"tablename": {
 											"value": "@pipeline().parameters.TableName",
@@ -2542,6 +2543,82 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/dataflows/Filter_data')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline3')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "input.*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "MergeFiles"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ReadingFolder",
+								"type": "DatasetReference",
+								"parameters": {
+									"Filename": {
+										"value": "input.*",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "outputfileCSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ReadingFolder')]",
+				"[concat(variables('factoryId'), '/datasets/outputfileCSV')]"
 			]
 		},
 		{
@@ -3977,6 +4054,13 @@
 								"type": "DatasetReference"
 							},
 							"name": "source2"
+						},
+						{
+							"dataset": {
+								"referenceName": "AzureSqlTable1",
+								"type": "DatasetReference"
+							},
+							"name": "source3"
 						}
 					],
 					"sinks": [
@@ -4024,6 +4108,14 @@
 						"     isolationLevel: 'READ_UNCOMMITTED',",
 						"     query: 'select * from EMPLOYEE_DATA',",
 						"     format: 'query') ~> source2",
+						"source(output(",
+						"          EMP_ID as string,",
+						"          EmpName as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source3",
 						"join1 alterRow(insertIf(source1@EmpId!=source2@EMPID&&FitrstName!=FirstName&&source1@Gender!=source2@Gender),",
 						"     updateIf(source1@EmpId==source2@EMPID&&FitrstName==FirstName&&source1@Gender==source2@Gender)) ~> alterRow1",
 						"source1, source2 join(source1@EmpId == source2@EMPID,",
